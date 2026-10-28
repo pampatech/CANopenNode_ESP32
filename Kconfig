@@ -193,6 +193,44 @@ menuconfig USE_CANOPENNODE
         config CO_OTA_ENABLE
             bool "CAN OTA (firmware download via OD 0x1F50)"
             default n
+        menuconfig CO_CONSOLE_ENABLE
+            bool "Console + log ring buffer (SDO access via OD 0x2050/0x2051)"
+            default n
+            help
+                Captures stdout (ESP_LOGx and printf) into a RAM ring buffer,
+                readable with the "logbuf" command or an SDO upload of OD 0x2050;
+                runs command lines written to OD 0x2051 through esp_console; and
+                optionally runs an interactive REPL on the chip's primary console
+                port (USB-Serial-JTAG or UART). Call co_console_init() first
+                thing in app_main. The project's OD must define 0x2050 "logbuf"
+                (DOMAIN) and 0x2051 "command" (string).
+            if CO_CONSOLE_ENABLE
+                config CO_CONSOLE_LOG_LINES
+                    int "Log ring buffer lines"
+                    range 4 1000
+                    default 50
+                config CO_CONSOLE_LOG_LINE_LEN
+                    int "Log ring buffer line length"
+                    range 32 512
+                    default 128
+                config CO_CONSOLE_REPL
+                    bool "Interactive REPL on the console port"
+                    default y
+                    help
+                        On USB-Serial-JTAG the REPL stays idle until a host is
+                        connected. Its prompt and line editing never go into the
+                        log ring buffer; command output does.
+                config CO_CONSOLE_SERIAL_OUTPUT
+                    bool "Mirror logs/stdout to the console port"
+                    default y if ESP_CONSOLE_USB_SERIAL_JTAG
+                    default n
+                    help
+                        Also send everything captured in the ring buffer to the
+                        console port. Never blocks the logging task: output is
+                        dropped while no USB host is connected or when the TX
+                        buffer is full. Without it, the REPL still accepts
+                        commands but their output only lands in the ring buffer.
+            endif #CO_CONSOLE_ENABLE
         menu "Debug"
             config CO_DEBUG_SDO
                 bool "SDO client/server"
