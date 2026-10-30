@@ -233,7 +233,11 @@ CO_ReturnError_t CO_CANmodule_init(
     io_conf.pin_bit_mask = pinMask;
     io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 0;
-    gpio_config(&io_conf);
+    /* LEDs may be enabled with no GPIO (e.g. driven through an I/O expander) */
+    if (pinMask != 0ULL)
+    {
+        gpio_config(&io_conf);
+    }
     /* Set LED off */
 #if (CONFIG_CO_LED_RED_GPIO >= 0)
     gpio_set_level(CONFIG_CO_LED_RED_GPIO,
